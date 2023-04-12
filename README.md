@@ -37,11 +37,9 @@ Note: background rendering for Smooth fonts is also now available when using the
 
 7. New anti-aliased graphics functions to draw lines, wedge shaped lines, circles and rounded rectangles. [Examples are included](https://github.com/Bodmer/TFT_eSPI/tree/master/examples/Smooth%20Graphics). Examples have also been added to [display PNG compressed images](https://github.com/Bodmer/TFT_eSPI/tree/master/examples/PNG%20Images) (note: requires ~40kbytes RAM).
 
-8. Frank Boesing has created an extension library for TFT_eSPI that allows a large range of ready-built fonts to be used. Frank's library (adapted to permit rendering in sprites as well as TFT) can be [downloaded here](https://github.com/Bodmer/TFT_eSPI_ext). More than 3300 additional Fonts are [available here](https://github.com/FrankBoesing/fonts/tree/master/ofl). The TFT_eSPI_ext library contains examples that demonstrate the use of the fonts.
+8. Users of PowerPoint experienced with running macros may be interested in the [pptm sketch generator here](https://github.com/Bodmer/PowerPoint_to_sketch), this converts graphics and tables drawn in PowerPoint slides into an Arduino sketch that renders the graphics on a 480x320 TFT. This is based on VB macros [created by Kris Kasprzak here](https://github.com/KrisKasprzak/Powerpoint-ILI9341_t3).
 
-9. Users of PowerPoint experienced with running macros may be interested in the [pptm sketch generator here](https://github.com/Bodmer/PowerPoint_to_sketch), this converts graphics and tables drawn in PowerPoint slides into an Arduino sketch that renders the graphics on a 480x320 TFT. This is based on VB macros [created by Kris Kasprzak here](https://github.com/KrisKasprzak/Powerpoint-ILI9341_t3).
-
-10. The library contains two new functions for rectangles filled with a horizontal or vertical coloured gradient:
+9. The library contains two new functions for rectangles filled with a horizontal or vertical coloured gradient:
 
       tft.fillRectHGradient(x, y, w, h, color1, color2);
   
@@ -49,19 +47,25 @@ Note: background rendering for Smooth fonts is also now available when using the
       
       ![Gradient](https://i.imgur.com/atR0DmP.png)
 
-11. The RP2040 8 bit parallel interface uses the PIO. The PIO now manages the "setWindow" and "block fill" actions, releasing the processor for other tasks when areas of the screen are being filled with a colour. The PIO can optionally be used for SPI interface displays if #define RP2040_PIO_SPI is put in the setup file. Touch screens and pixel read operations are not supported when the PIO interface is used.
+10. The RP2040 8 bit parallel interface uses the PIO. The PIO now manages the "setWindow" and "block fill" actions, releasing the processor for other tasks when areas of the screen are being filled with a colour. The PIO can optionally be used for SPI interface displays if #define RP2040_PIO_SPI is put in the setup file. Touch screens and pixel read operations are not supported when the PIO interface is used.
 The RP2040 PIO features only work with [Earle Philhower's board package](https://github.com/earlephilhower/arduino-pico), NOT the Arduino Mbed version.
 
 The use of PIO for SPI allows the RP2040 to be over-clocked (up to 250MHz works on my boards) in Earle's board package whilst still maintaining high SPI clock rates.
 
-12. DMA can now be used with the Raspberry Pi Pico (RP2040) when used with 8/16 bit parallel and 16 bit colour SPI displays. See "Bouncy_Circles" sketch.
+11. DMA can now be used with the Raspberry Pi Pico (RP2040) when used with 8/16 bit parallel and 16 bit colour SPI displays. See "Bouncy_Circles" sketch.
 
       ["Bouncing circles"](https://www.youtube.com/watch?v=njFXIzCTQ_Q&lc=UgymaUIwOIuihvYh-Qt4AaABAg)
 
 
 # TFT_eSPI
 
-An Arduino IDE compatible graphics and fonts library for 32 bit processors. The library is targeted at 32 bit processors, it  has been performance optimised for RP2040, STM32, ESP8266 and ESP32 types, other processors may be used but will use the slower generic Arduino interface calls. The library can be loaded using the Arduino IDE's Library Manager. Direct Memory Access (DMA) can be used with the ESP32, RP2040 and STM32 processors with SPI interface displays to improve rendering performance. DMA with a parallel interface (8 and 16 bit parallel) is only supported with the RP2040.
+A feature rich Arduino IDE compatible graphics and fonts library for 32 bit processors. The library is targeted at 32 bit processors, it  has been performance optimised for RP2040, STM32, ESP8266 and ESP32 types, other 32 bit processors may be used but will use the slower generic Arduino interface calls. The library can be loaded using the Arduino IDE's Library Manager. Direct Memory Access (DMA) can be used with the ESP32, RP2040 and STM32 processors with SPI interface displays to improve rendering performance. DMA with a parallel interface (8 and 16 bit) is only supported with the RP2040.
+
+The updates for the ESP32 S2/C3/S3 means that the library requires the ESP32 Arduino board package 2.x.x or later.
+
+The screen controller, interface pins and library configuration settings must be defined inside the library. They can NOT be defined in the Arduino sketch. See the User_Setup_Select.h file for details. This approach has significant advantages, it keeps the examples clean from long configuration options and once the setup is defined any example can be run without modification. PlatformIO users can define these settings on a per project basis within a platformio.ini file, see Docs folder in library.
+
+Lots of example sketches are provided which demonstrate using the functions in the library. Due to the popularity of the library there are lots of online tutorials for TFT_eSPI that have been created by enthusiastic users.
 
 Optimised drivers have been tested with the following processors:
 
@@ -70,9 +74,24 @@ Optimised drivers have been tested with the following processors:
 * ESP8266
 * STM32F1xx, STM32F2xx, STM32F4xx, STM32F767 (higher RAM processors recommended)
 
-For other processors only SPI interface displays are supported and the slower Arduino SPI library functions are used by the library. Higher clock speed processors such as used for the Teensy 3.x and 4.x boards will still provide a very good performance with the generic Arduino SPI functions.
+The library supports the following interface types for these processors:
 
-"Four wire" SPI and 8 bit parallel interfaces are supported. Due to lack of GPIO pins the 8 bit parallel interface is NOT supported on the ESP8266. 8 bit parallel interface TFTs  (e.g. UNO format mcufriend shields) can used with the STM32 Nucleo 64/144 range or the UNO format ESP32 (see below for ESP32).
+| Processor | 4 wire SPI | 8 bit parallel | 16 bit parallel |   DMA support    |
+|-----------|    :---:   |     :---:      |      :---:      |       :---:      |
+| RP2040    |     Yes    |      Yes       |       Yes       |  Yes (all)       |
+| ESP32     |     Yes    |      Yes       |       No        |  Yes (SPI only)  |
+| ESP32 C3  |     Yes    |      No        |       No        |  No              |
+| ESP32 S2  |     Yes    |      No        |       No        |  No              |
+| ESP32 S3  |     Yes    |      Yes       |       No        |  Yes (SPI only)  |
+| ESP8266   |     Yes    |      No        |       No        |  No              |
+| STM32Fxxx |     Yes    |      Yes       |       No        |  Yes (SPI only)  |
+| Other     |     Yes    |      No        |       No        |  No              |
+
+For other (generic) processors only SPI interface displays are supported and the slower Arduino SPI library functions are used by the library. Higher clock speed processors such as used for the Teensy 3.x and 4.x boards will still provide a very good performance with the generic Arduino SPI functions.
+
+Due to lack of GPIO pins the 8 bit parallel interface is NOT supported on the ESP8266. 8 bit parallel interface TFTs  (e.g. UNO format mcufriend shields) can used with the STM32 Nucleo 64/144 range or the UNO format ESP32 (see below for ESP32).
+
+Support for the XPT2046 touch screen controller is built into the library and can be used with SPI interface displays. Third party touch support libraries are also available when using a display parallel interface.
 
 Displays using the following controllers are supported:
 
@@ -92,7 +111,7 @@ Displays using the following controllers are supported:
 * RM68140
 * S6D02A1
 * SSD1351
-* SSD1963
+* SSD1963 (this controller only has a parallel interface option)
 * ST7735
 * ST7789
 * ST7796
